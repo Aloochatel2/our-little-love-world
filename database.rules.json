@@ -1,0 +1,16 @@
+{
+  "rules": {
+    "roomInvites": {
+      ".read": "auth != null",
+      "$code": {
+        ".write": "auth != null && ((!data.exists() && newData.child('hostUid').val() == auth.uid && newData.child('partnerUid').val() == null) || (data.exists() && data.child('partnerUid').val() == null && newData.child('partnerUid').val() == auth.uid && data.child('hostUid').val() != auth.uid))"
+      }
+    },
+    "gameRooms": {
+      "$code": {
+        ".read": "auth != null && (root.child('roomInvites').child($code).child('hostUid').val() == auth.uid || root.child('roomInvites').child($code).child('partnerUid').val() == auth.uid)",
+        ".write": "auth != null && (root.child('roomInvites').child($code).child('hostUid').val() == auth.uid || root.child('roomInvites').child($code).child('partnerUid').val() == auth.uid)"
+      }
+    }
+  }
+}
