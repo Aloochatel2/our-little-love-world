@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#160f1b">
+  <title>Our Little Love World ♡</title>
+  <style>
+    :root{color-scheme:dark;--bg:#160f1b;--panel:#241927;--pink:#ff75a8;--soft:#ffd6e5;--text:#fff7fb;--muted:#c9b7c4;--line:#51364a}
+    *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#40203a 0,#160f1b 48%);font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:var(--text);min-height:100vh}
+    main{max-width:650px;margin:auto;padding:24px 16px 48px}.brand{text-align:center;padding:18px 0 22px}.heart{font-size:38px}.brand h1{font-size:clamp(26px,7vw,38px);margin:4px 0}.brand p{color:var(--muted);margin:0}
+    .card{background:#241927ed;border:1px solid var(--line);border-radius:22px;padding:20px;margin:14px 0;box-shadow:0 12px 35px #0004}
+    h2{font-size:21px;margin:0 0 12px}p{line-height:1.5}.muted{color:var(--muted);font-size:14px}
+    input,button{font:inherit}input{width:100%;padding:14px;border-radius:13px;border:1px solid #77536b;background:#170f19;color:white;margin:7px 0 12px;outline:none}
+    button{border:0;border-radius:14px;padding:13px 17px;background:var(--pink);color:#321323;font-weight:750;cursor:pointer;width:100%;margin:5px 0}
+    button.secondary{background:#493248;color:#fff;border:1px solid #77536b}button:disabled{opacity:.5;cursor:not-allowed}
+    .row{display:flex;gap:10px}.row button{flex:1}.hidden{display:none!important}.code{font-size:30px;letter-spacing:7px;font-weight:800;text-align:center;color:var(--soft);padding:10px}
+    .prompt{font-size:22px;line-height:1.35;font-weight:700}.tag{display:inline-block;background:#57334c;color:#ffd6e5;border-radius:99px;padding:5px 10px;font-size:12px;font-weight:700}
+    .answers{display:grid;gap:10px;margin-top:15px}.answer{background:#1a121d;border:1px solid var(--line);padding:12px;border-radius:13px}.answer b{color:var(--soft)}
+    .notice{padding:12px;border-radius:12px;background:#382b20;color:#ffe1a8;font-size:14px;margin:10px 0}.status{font-size:13px;color:var(--muted);text-align:center;margin-top:14px}
+    footer{text-align:center;color:#a88e9e;font-size:12px;margin-top:22px}
+  </style>
+</head>
+<body>
+<main>
+  <header class="brand"><div class="heart">💗</div><h1>Our Little Love World</h1><p>Just you two. Anywhere, anytime. ♡</p></header>
+
+  <section id="login" class="card">
+    <h2>Come into your little world</h2>
+    <p class="muted">Sign in with one tap. Your partner will join using your private room code.</p>
+    <button id="signInBtn">💞 Start with one tap</button>
+    <div id="loginMsg" class="status">Connecting securely…</div>
+  </section>
+
+  <section id="home" class="card hidden">
+    <h2>Ready for a little us-time?</h2>
+    <p class="muted">Create a room and share its 6-character code with your partner, or join their room.</p>
+    <button id="createBtn">♡ Create our room</button>
+    <div style="text-align:center;color:var(--muted);margin:12px">— OR —</div>
+    <label for="roomInput" class="muted">Enter your partner's room code</label>
+    <input id="roomInput" maxlength="6" placeholder="e.g. LOVE24" autocomplete="off">
+    <button class="secondary" id="joinBtn">Join our room</button>
+  </section>
+
+  <section id="room" class="card hidden">
+    <div class="tag" id="roomState">WAITING FOR PARTNER</div>
+    <h2 style="margin-top:12px">Your little world is ready 💕</h2>
+    <p class="muted">Share this code with your partner:</p>
+    <div class="code" id="roomCode"></div>
+    <button class="secondary" id="shareBtn">Share invite code</button>
+    <div id="waitingText" class="notice">Waiting for your favourite person to join…</div>
+    <div id="gameArea" class="hidden">
+      <div class="muted" id="roundLabel">Round 1 of 10</div>
+      <div class="tag" id="category">LOVE QUIZ</div>
+      <p class="prompt" id="promptText"></p>
+      <label class="muted" for="answerInput">Your answer</label>
+      <input id="answerInput" maxlength="280" placeholder="Type your answer…">
+      <button id="answerBtn">Send my answer 💌</button>
+      <div class="answers" id="answers"></div>
+      <button class="secondary" id="nextBtn">Next round →</button>
+    </div>
+    <button class="secondary" id="leaveBtn">Leave this room</button>
+  </section>
+  <div id="appMsg" class="status"></div>
+  <footer>Made with love · Only two player slots per room</footer>
+</main>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getDatabase, ref, get, set, update, onValue, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAkwSDTZoAbNTwzD7_fsCQh-45w4DfYcSA",
+    authDomain: "our-little-love-world-89159.firebaseapp.com",
+    databaseURL: "https://our-little-love-world-89159-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "our-little-love-world-89159",
+    storageBucket: "our-little-love-world-89159.firebasestorage.app",
+    messagingSenderId: "712504404524",
+    appId: "1:712504404524:web:520842fffd9c48c0a73f89",
+    measurementId: "G-L7DSLY7Q62"
+  };
+
+  const prompts = [
+    ["LOVE QUIZ","What was the first thing you noticed about me?"],
+    ["TRUTH","What is one little thing I do that always makes you smile?"],
+    ["FUNNY","If our relationship had a silly movie title, what would it be?"],
+    ["DARE","Send your partner a 10-second voice note saying something sweet."],
+    ["LOVE QUIZ","What is our dream place to visit together?"],
+    ["TRUTH","When did you feel closest to me?"],
+    ["FUNNY","Describe me using only three emojis."],
+    ["DARE","Give your partner a new cute nickname right now."],
+    ["LOVE QUIZ","What is one memory of us you never want to forget?"],
+    ["TRUTH","What is one new thing you want us to do together?"]
+  ];
+
+  const app = initializeApp(firebaseConfig), auth = getAuth(app), db = getDatabase(app);
+  const $ = id => document.getElementById(id);
+  let user = null, currentCode = null, unsubscribeRoom = null, roomData = null;
+  const show = id => $(id).classList.remove("hidden");
+  const hide = id => $(id).classList.add("hidden");
+  const msg = (s, bad=false) => { $("appMsg").textContent=s; $("appMsg").style.color=bad?"#ff9eae":"#c9b7c4"; };
+  const makeCode = () => Math.random().toString(36).slice(2,8).toUpperCase();
+
+  $("signInBtn").onclick = async () => {
+    $("signInBtn").disabled=true; $("loginMsg").textContent="Signing you in…";
+    try { await signInAnonymously(auth); } catch(e) { $("loginMsg").textContent="Sign-in failed: "+e.message; $("signInBtn").disabled=false; }
+  };
+  onAuthStateChanged(auth, u => {
+    user=u;
+    if(u){ hide("login"); show("home"); $("loginMsg").textContent="Connected"; }
+  });
+
+  async function openRoom(code) {
+    currentCode=code;
+    $("roomCode").textContent=code;
+    hide("home"); show("room"); $("waitingText").classList.remove("hidden"); hide("gameArea");
+    if(unsubscribeRoom) unsubscribeRoom();
+    unsubscribeRoom=onValue(ref(db,`gameRooms/${code}`), snap => {
+      roomData=snap.val();
+      if(!roomData){ msg("Room data is unavailable. Check that your Firebase rules are published.",true); return; }
+      const ready=!!roomData.partnerUid;
+      $("roomState").textContent=ready?"BOTH OF YOU ARE HERE 💗":"WAITING FOR PARTNER";
+      $("waitingText").classList.toggle("hidden",ready);
+      $("gameArea").classList.toggle("hidden",!ready);
+      if(ready) renderGame();
+    }, err => msg("Database error: "+err.message,true));
+  }
+
+  $("createBtn").onclick = async () => {
+    if(!user) return msg("Tap Start with one tap first.",true);
+    $("createBtn").disabled=true;
+    try {
+      let code;
+      for(let i=0;i<8;i++){ code=makeCode(); const s=await get(ref(db,`roomInvites/${code}`)); if(!s.exists()) break; }
+      await set(ref(db,`roomInvites/${code}`),{hostUid:user.uid,partnerUid:null,createdAt:Date.now()});
+      await set(ref(db,`gameRooms/${code}`),{hostUid:user.uid,partnerUid:null,currentRound:0,answers:{},createdAt:serverTimestamp()});
+      await openRoom(code); msg("Room created. Share the code with your partner.");
+    } catch(e){ msg("Could not create room: "+e.message,true); }
+    $("createBtn").disabled=false;
+  };
+
+  $("joinBtn").onclick = async () => {
+    if(!user) return msg("Tap Start with one tap first.",true);
+    const code=$("roomInput").value.trim().toUpperCase();
+    if(!/^[A-Z0-9]{6}$/.test(code)) return msg("Enter the 6-character room code.",true);
+    $("joinBtn").disabled=true;
+    try {
+      const inviteRef=ref(db,`roomInvites/${code}`);
+      const result=await runTransaction(inviteRef, current => {
+        if(!current) return;
+        if(current.hostUid===user.uid) return;
+        if(current.partnerUid && current.partnerUid!==user.uid) return;
+        current.partnerUid=user.uid; return current;
+      });
+      if(!result.committed) throw new Error("Room is full, doesn't exist, or you created it. Check the code.");
+      await update(ref(db,`gameRooms/${code}`),{partnerUid:user.uid});
+      await openRoom(code); msg("You joined your partner's room. 💗");
+    } catch(e){ msg("Could not join: "+e.message,true); }
+    $("joinBtn").disabled=false;
+  };
+
+  function renderGame(){
+    const n=Math.min(Number(roomData.currentRound||0),9), p=prompts[n];
+    $("roundLabel").textContent=`Round ${n+1} of 10`;
+    $("category").textContent=p[0]; $("promptText").textContent=p[1];
+    const answers=roomData.answers?.[n]||{};
+    $("answers").innerHTML="";
+    for(const [uid,a] of Object.entries(answers)){
+      const div=document.createElement("div"); div.className="answer";
+      const who=uid===roomData.hostUid?"You / Host":"Partner";
+      const b=document.createElement("b"); b.textContent=who;
+      const para=document.createElement("div"); para.textContent=a.text||"";
+      div.append(b,para); $("answers").append(div);
+    }
+    $("answerInput").value=answers[user.uid]?.text||"";
+    $("nextBtn").disabled=roomData.hostUid!==user.uid || n>=9;
+    $("nextBtn").textContent=n>=9?"All 10 rounds complete 💗":"Next round →";
+  }
+
+  $("answerBtn").onclick=async()=>{
+    const text=$("answerInput").value.trim(); if(!text) return msg("Write your answer first.",true);
+    try{ await update(ref(db,`gameRooms/${currentCode}/answers/${roomData.currentRound}/${user.uid}`),{text,updatedAt:Date.now()}); msg("Answer sent 💌"); }
+    catch(e){msg("Could not send answer: "+e.message,true);}
+  };
+  $("nextBtn").onclick=async()=>{
+    if(roomData.hostUid!==user.uid) return;
+    try{await update(ref(db,`gameRooms/${currentCode}`),{currentRound:Math.min(9,Number(roomData.currentRound||0)+1)});}
+    catch(e){msg("Could not move to next round: "+e.message,true);}
+  };
+  $("shareBtn").onclick=async()=>{
+    const text=`Join me in Our Little Love World 💗 Room code: ${currentCode}`;
+    if(navigator.share){try{await navigator.share({title:"Our Little Love World",text});}catch{}}
+    else {try{await navigator.clipboard.writeText(text);msg("Invite copied. Send it to your partner!");}catch{msg(text);}}
+  };
+  $("leaveBtn").onclick=()=>{if(unsubscribeRoom)unsubscribeRoom();currentCode=null;roomData=null;hide("room");show("home");msg("You left the room on this device. The room stays available for your partner.");};
+</script>
+</body>
+</html>
