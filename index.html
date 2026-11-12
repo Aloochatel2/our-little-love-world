@@ -106,22 +106,18 @@
     $("signInBtn").disabled=true; $("loginMsg").textContent="Signing you in…";
     try { await signInAnonymously(auth); } catch(e) { $("loginMsg").textContent="Sign-in failed: "+e.message; $("signInBtn").disabled=false; }
   };
-  
-onAuthStateChanged(auth, async (u) => {
+onAuthStateChanged(auth, (u) => {
   user = u;
 
   if (u) {
     hide("login");
     show("home");
     $("loginMsg").textContent = "Connected";
+    $("signInBtn").disabled = false;
   } else {
-    $("loginMsg").textContent = "Signing in...";
-    try {
-      await signInAnonymously(auth);
-    } catch (e) {
-      $("loginMsg").textContent = "Login error: " + e.message;
-      console.error("Firebase login error:", e);
-    }
+    show("login");
+    $("loginMsg").textContent = "Please tap Start with one tap.";
+    $("signInBtn").disabled = false;
   }
 });
   async function openRoom(code) {
