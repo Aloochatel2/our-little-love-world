@@ -196,7 +196,9 @@ $("joinBtn").onclick = async () => {
   } finally {
     $("joinBtn").disabled = false;
   }
-  function renderGame(){
+};
+
+function renderGame(){
     const n=Math.min(Number(roomData.currentRound||0),9), p=prompts[n];
     $("roundLabel").textContent=`Round ${n+1} of 10`;
     $("category").textContent=p[0]; $("promptText").textContent=p[1];
