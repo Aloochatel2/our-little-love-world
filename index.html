@@ -139,27 +139,54 @@
     } catch(e){ msg("Could not create room: "+e.message,true); }
     $("createBtn").disabled=false;
   };
+$("joinBtn").onclick = async () => {
+  if (!user) return msg("Tap Start with one tap first.", true);
 
-  $("joinBtn").onclick = async () => {
-    if(!user) return msg("Tap Start with one tap first.",true);
-    const code=$("roomInput").value.trim().toUpperCase();
-    if(!/^[A-Z0-9]{6}$/.test(code)) return msg("Enter the 6-character room code.",true);
-    $("joinBtn").disabled=true;
-    try {
-      const inviteRef=ref(db,`roomInvites/${code}`);
-      const result=await runTransaction(inviteRef, current => {
-        if(!current) return;
-        if(current.hostUid===user.uid) return;
-        if(current.partnerUid && current.partnerUid!==user.uid) return;
-        current.partnerUid=user.uid; return current;
+  const code = $("roomInput").value.trim().toUpperCase();
+
+  if (!/^[A-Z0-9]{6}$/.test(code)) {
+    return msg("Enter the 6-character room code.", true);
+  }
+
+  $("joinBtn").disabled = true;
+
+  try {
+    const inviteRef = ref(db, `roomInvites/${code}`);
+    const inviteSnap = await get(inviteRef);
+
+    if (!inviteSnap.exists()) {
+      throw new Error("Room code not found. Check the latest code.");
+    }
+
+    const invite = inviteSnap.val();
+
+    if (invite.hostUid === user.uid) {
+      throw new Error("You created this room. Use another device.");
+    }
+
+    if (invite.partnerUid && invite.partnerUid !== user.uid) {
+      throw new Error("This room already has a partner.");
+    }
+
+    if (!invite.partnerUid) {
+      await update(inviteRef, {
+        partnerUid: user.uid
       });
-      if(!result.committed) throw new Error("Room is full, doesn't exist, or you created it. Check the code.");
-      await update(ref(db,`gameRooms/${code}`),{partnerUid:user.uid});
-      await openRoom(code); msg("You joined your partner's room. 💗");
-    } catch(e){ msg("Could not join: "+e.message,true); }
-    $("joinBtn").disabled=false;
-  };
+    }
 
+    await set(
+      ref(db, `gameRooms/${code}/partnerUid`),
+      user.uid
+    );
+
+    await openRoom(code);
+    msg("You joined your partner's room. 💗");
+
+  } catch (e) {
+    msg("Could not join: " + e.message, true);
+  } finally {
+    $("joinBtn").disabled = false;
+  }
   function renderGame(){
     const n=Math.min(Number(roomData.currentRound||0),9), p=prompts[n];
     $("roundLabel").textContent=`Round ${n+1} of 10`;
