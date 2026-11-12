@@ -19,7 +19,83 @@
     .answers{display:grid;gap:10px;margin-top:15px}.answer{background:#1a121d;border:1px solid var(--line);padding:12px;border-radius:13px}.answer b{color:var(--soft)}
     .notice{padding:12px;border-radius:12px;background:#382b20;color:#ffe1a8;font-size:14px;margin:10px 0}.status{font-size:13px;color:var(--muted);text-align:center;margin-top:14px}
     footer{text-align:center;color:#a88e9e;font-size:12px;margin-top:22px}
-  </style>
+    
+/* Romantic animations */
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  15% { transform: scale(1.16); }
+  30% { transform: scale(1); }
+  45% { transform: scale(1.1); }
+}
+
+@keyframes floatDecor {
+  from { transform: translateY(0) rotate(-8deg); }
+  to { transform: translateY(-115vh) rotate(15deg); }
+}
+
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(18px) scale(.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes loveRise {
+  0% { transform: translateY(0) scale(.6) rotate(0); opacity: 0; }
+  20% { opacity: 1; }
+  100% { transform: translateY(-110vh) scale(1.5) rotate(35deg); opacity: 0; }
+}
+
+.heart {
+  animation: heartbeat 2s infinite;
+}
+
+.card {
+  animation: cardIn .65s ease both;
+}
+
+button {
+  transition: transform .2s ease, box-shadow .2s ease, filter .2s ease;
+}
+
+button:active {
+  transform: scale(.96);
+}
+
+button:not(:disabled):hover {
+  filter: brightness(1.12);
+  box-shadow: 0 5px 20px #ff75a855;
+}
+
+.answer {
+  animation: cardIn .45s ease both;
+}
+
+body::before {
+  content: "♡     ✦      💗      ♡";
+  position: fixed;
+  left: 8%;
+  bottom: -40px;
+  font-size: 24px;
+  opacity: .13;
+  pointer-events: none;
+  z-index: 0;
+  animation: floatDecor 17s linear infinite;
+}
+
+main {
+  position: relative;
+  z-index: 1;
+}
+
+.love-pop {
+  position: fixed;
+  bottom: -35px;
+  z-index: 9999;
+  pointer-events: none;
+  font-size: 25px;
+  animation: loveRise 2.2s ease-out forwards;
+}
+
+  </style> 
 </head>
 <body>
 <main>
