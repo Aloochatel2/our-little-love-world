@@ -126,6 +126,10 @@ main {
     <button class="secondary" id="shareBtn">Share invite code</button>
     <div id="waitingText" class="notice">Waiting for your favourite person to join…</div>
     <div id="gameArea" class="hidden">
+      <label class="muted" for="modeSelect">Choose your game mode</label>
+      <select id="modeSelect" style="width:100%;padding:13px;border-radius:13px;border:1px solid #77536b;background:#170f19;color:white;margin:7px 0 14px">
+        <option value="love">💗 Love Quiz</option><option value="truth">🤫 Truth or Dare</option><option value="choice">⚡ This or That</option><option value="guess">🧠 Guess My Answer</option><option value="would">💕 Would You Rather</option><option value="memory">📸 Memory Challenge</option><option value="daily">🌷 Daily Love Challenge</option>
+      </select>
       <div class="muted" id="roundLabel">Round 1 of 10</div>
       <div class="tag" id="category">LOVE QUIZ</div>
       <p class="prompt" id="promptText"></p>
@@ -157,18 +161,16 @@ main {
     measurementId: "G-L7DSLY7Q62"
   };
 
-  const prompts = [
-    ["LOVE QUIZ","What was the first thing you noticed about me?"],
-    ["TRUTH","What is one little thing I do that always makes you smile?"],
-    ["FUNNY","If our relationship had a silly movie title, what would it be?"],
-    ["DARE","Send your partner a 10-second voice note saying something sweet."],
-    ["LOVE QUIZ","What is our dream place to visit together?"],
-    ["TRUTH","When did you feel closest to me?"],
-    ["FUNNY","Describe me using only three emojis."],
-    ["DARE","Give your partner a new cute nickname right now."],
-    ["LOVE QUIZ","What is one memory of us you never want to forget?"],
-    ["TRUTH","What is one new thing you want us to do together?"]
-  ];
+  const modePrompts = {
+    love:[["LOVE QUIZ","What was the first thing you noticed about me?"],["LOVE QUIZ","What is my favourite way to spend time with you?"],["LOVE QUIZ","Which song reminds you of us?"],["LOVE QUIZ","What always makes me smile?"],["LOVE QUIZ","Where would our dream date be?"],["LOVE QUIZ","What is my cutest habit?"],["LOVE QUIZ","What do I love most about you?"],["LOVE QUIZ","What would our perfect weekend look like?"],["LOVE QUIZ","Which memory of us is your favourite?"],["LOVE QUIZ","What dream should we achieve together?"]],
+    truth:[["TRUTH","What little thing I do makes you smile?"],["TRUTH","When did you first realise you liked me?"],["TRUTH","What sweet thing have you wanted to tell me?"],["DARE","Send a 10-second voice note saying something lovely."],["TRUTH","What is your favourite nickname for me?"],["DARE","Give me a new cute nickname."],["TRUTH","What should we do more often?"],["DARE","Send your best romantic emoji combination."],["TRUTH","When do you miss me the most?"],["DARE","Write me a tiny 2-line love poem."]],
+    choice:[["THIS OR THAT","Sunset date 🌅 or stargazing 🌌?"],["THIS OR THAT","Long hugs 🤗 or forehead kisses 💋?"],["THIS OR THAT","Movie night 🍿 or long drive 🚗?"],["THIS OR THAT","Beach 🏖️ or mountains 🏔️?"],["THIS OR THAT","Cute texts 💌 or surprise calls 📞?"],["THIS OR THAT","Cook together 🍝 or order food 🍕?"],["THIS OR THAT","Matching outfits 👕 or bracelets 💞?"],["THIS OR THAT","Rainy cuddles 🌧️ or winter walks ❄️?"],["THIS OR THAT","Planned date or spontaneous adventure?"],["THIS OR THAT","One big trip ✈️ or many little dates 💗?"]],
+    guess:[["GUESS MY ANSWER","What is my idea of a perfect date?"],["GUESS MY ANSWER","Which food would I choose right now?"],["GUESS MY ANSWER","What makes me feel most loved?"],["GUESS MY ANSWER","Which place do I want to visit with you?"],["GUESS MY ANSWER","What is my most-used emoji?"],["GUESS MY ANSWER","What is my favourite thing about us?"],["GUESS MY ANSWER","Quiet night in or going out?"],["GUESS MY ANSWER","What small gift would make me happiest?"],["GUESS MY ANSWER","What do I do when I miss you?"],["GUESS MY ANSWER","What is one thing on my bucket list?"]],
+    would:[["WOULD YOU RATHER","Travel the world together or build our dream home?"],["WOULD YOU RATHER","A thousand little dates or one grand surprise?"],["WOULD YOU RATHER","Hold hands in rain or dance under stars?"],["WOULD YOU RATHER","Relive our first meeting or peek at our future?"],["WOULD YOU RATHER","A day cuddling or a day exploring?"],["WOULD YOU RATHER","Love letters or surprise voice notes?"],["WOULD YOU RATHER","Unplanned road trip or planned holiday?"],["WOULD YOU RATHER","Cook together or bake a dessert?"],["WOULD YOU RATHER","Matching rings or matching bracelets?"],["WOULD YOU RATHER","Watch sunrise or sunset together?"]],
+    memory:[["MEMORY CHALLENGE","Describe our first proper conversation."],["MEMORY CHALLENGE","What were we wearing on a memorable day?"],["MEMORY CHALLENGE","Name a place we visited or want to visit."],["MEMORY CHALLENGE","What funny moment do we still remember?"],["MEMORY CHALLENGE","What was one of our earliest inside jokes?"],["MEMORY CHALLENGE","Recall a message from me that made you happy."],["MEMORY CHALLENGE","What little detail from our time together do you remember?"],["MEMORY CHALLENGE","Describe one day you wish you could replay."],["MEMORY CHALLENGE","What song, movie, or food did we share?"],["MEMORY CHALLENGE","Share one memory you hope we make again."]],
+    daily:[["DAILY LOVE CHALLENGE","Send your partner one genuine compliment."],["DAILY LOVE CHALLENGE","Share one thing you are grateful for today."],["DAILY LOVE CHALLENGE","Plan a tiny date for your next free day."],["DAILY LOVE CHALLENGE","Send a photo of something that reminded you of them."],["DAILY LOVE CHALLENGE","Tell your partner one reason you choose them."],["DAILY LOVE CHALLENGE","Share a song and dedicate one line to them."],["DAILY LOVE CHALLENGE","Describe your partner in three lovely words."],["DAILY LOVE CHALLENGE","Make one small promise for this week."],["DAILY LOVE CHALLENGE","Send a virtual hug and say why they need it."],["DAILY LOVE CHALLENGE","Write one thing you are excited to do together."]]
+  };
+  const modeNames={love:"💗 Love Quiz",truth:"🤫 Truth or Dare",choice:"⚡ This or That",guess:"🧠 Guess My Answer",would:"💕 Would You Rather",memory:"📸 Memory Challenge",daily:"🌷 Daily Love Challenge"};
 
   const app = initializeApp(firebaseConfig), auth = getAuth(app), db = getDatabase(app);
   const $ = id => document.getElementById(id);
@@ -219,7 +221,7 @@ onAuthStateChanged(auth, (u) => {
       let code;
       for(let i=0;i<8;i++){ code=makeCode(); const s=await get(ref(db,`roomInvites/${code}`)); if(!s.exists()) break; }
       await set(ref(db,`roomInvites/${code}`),{hostUid:user.uid,partnerUid:null,createdAt:Date.now()});
-      await set(ref(db,`gameRooms/${code}`),{hostUid:user.uid,partnerUid:null,currentRound:0,answers:{},createdAt:serverTimestamp()});
+      await set(ref(db,`gameRooms/${code}`),{hostUid:user.uid,partnerUid:null,currentRound:0,currentMode:"love",answers:{},createdAt:serverTimestamp()});
       await openRoom(code); msg("Room created. Share the code with your partner.");
     } catch(e){ msg("Could not create room: "+e.message,true); }
     $("createBtn").disabled=false;
@@ -275,31 +277,39 @@ $("joinBtn").onclick = async () => {
 };
 
 function renderGame(){
-    const n=Math.min(Number(roomData.currentRound||0),9), p=prompts[n];
-    $("roundLabel").textContent=`Round ${n+1} of 10`;
+    const mode=roomData.currentMode||"love", list=modePrompts[mode]||modePrompts.love;
+    const n=Math.min(Number(roomData.currentRound||0),9), p=list[n];
+    $("modeSelect").value=mode; $("modeSelect").disabled=roomData.hostUid!==user.uid;
+    $("roundLabel").textContent=`Round ${n+1} of 10 · ${modeNames[mode]}`;
     $("category").textContent=p[0]; $("promptText").textContent=p[1];
-    const answers=roomData.answers?.[n]||{};
-    $("answers").innerHTML="";
+    const answers=roomData.answers?.[mode]?.[n]||{}; $("answers").innerHTML="";
     for(const [uid,a] of Object.entries(answers)){
       const div=document.createElement("div"); div.className="answer";
-      const who=uid===roomData.hostUid?"You / Host":"Partner";
-      const b=document.createElement("b"); b.textContent=who;
+      const bold=document.createElement("b"); bold.textContent=uid===roomData.hostUid?"Host":"Partner";
       const para=document.createElement("div"); para.textContent=a.text||"";
-      div.append(b,para); $("answers").append(div);
+      div.append(bold,para); $("answers").append(div);
     }
     $("answerInput").value=answers[user.uid]?.text||"";
-    $("nextBtn").disabled=roomData.hostUid!==user.uid || n>=9;
-    $("nextBtn").textContent=n>=9?"All 10 rounds complete 💗":"Next round →";
+    $("nextBtn").disabled=roomData.hostUid!==user.uid||n>=9;
+    $("nextBtn").textContent=n>=9?"Mode complete 💗":"Next round →";
   }
+  $("modeSelect").onchange=async()=>{
+    if(!roomData||roomData.hostUid!==user.uid)return;
+    try{
+      await set(ref(db,`gameRooms/${currentCode}/currentMode`),$("modeSelect").value);
+      await set(ref(db,`gameRooms/${currentCode}/currentRound`),0);
+      msg("New mode selected for both of you 💗");
+    }catch(e){msg("Mode change failed. Firebase rules need a small update.",true);}
+  };
 
   $("answerBtn").onclick=async()=>{
     const text=$("answerInput").value.trim(); if(!text) return msg("Write your answer first.",true);
-    try{ await update(ref(db,`gameRooms/${currentCode}/answers/${roomData.currentRound}/${user.uid}`),{text,updatedAt:Date.now()}); msg("Answer sent 💌"); }
+    try{ await update(ref(db,`gameRooms/${currentCode}/answers/${roomData.currentMode||"love"}/${roomData.currentRound}/${user.uid}`),{text,updatedAt:Date.now()}); msg("Answer sent 💌"); }
     catch(e){msg("Could not send answer: "+e.message,true);}
   };
   $("nextBtn").onclick=async()=>{
     if(roomData.hostUid!==user.uid) return;
-    try{await update(ref(db,`gameRooms/${currentCode}`),{currentRound:Math.min(9,Number(roomData.currentRound||0)+1)});}
+    try{await set(ref(db,`gameRooms/${currentCode}/currentRound`),Math.min(9,Number(roomData.currentRound||0)+1));}
     catch(e){msg("Could not move to next round: "+e.message,true);}
   };
   $("shareBtn").onclick=async()=>{
